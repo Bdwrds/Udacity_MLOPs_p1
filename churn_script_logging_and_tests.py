@@ -5,8 +5,8 @@ date: 2021-10-14
 """
 import os
 import logging
-import churn_library as cls
 import numpy as np
+import churn_library as cls
 
 logging.basicConfig(
     filename='./logs/churn_library.log',
@@ -29,13 +29,17 @@ def test_import(import_data):
     try:
         assert df.shape[0] > 0
         assert df.shape[1] > 0
-        logging.info("Testing import_data: SUCCESS: dataframe shape %s" % (str(df.shape)))
+        logging.info(
+            "Testing import_data: SUCCESS: dataframe shape %s" %
+            (str(
+                df.shape)))
     except AssertionError as err:
         logging.error("Testing import_data: The file doesn't appear to have rows and columns: %s"
                       (str(df.shape)))
         raise err
-        
+
     return df
+
 
 def test_eda(perform_eda):
     '''
@@ -87,11 +91,11 @@ def test_encoder_helper(encoder_helper):
     '''
     test encoder helper
     '''
-    df = test_eda(cls.perform_eda)
-    
+    df_encode = test_eda(cls.perform_eda)
+
     try:
-        assert 'Attrition_Flag' in df.columns
-        df['Churn'] = df['Attrition_Flag'].apply(
+        assert 'Attrition_Flag' in df_encode.columns
+        df_encode['Churn'] = df_encode['Attrition_Flag'].apply(
             lambda val: 0 if val == "Existing Customer" else 1)
         logging.info('Testing test_encoder_helper: SUCCESS - Target exists')
     except AssertionError as err:
@@ -100,7 +104,7 @@ def test_encoder_helper(encoder_helper):
         raise err
 
     target_col = 'Churn'
-    feature_lst = [
+    variable_lst = [
         'Gender',
         'Education_Level',
         'Marital_Status',
@@ -109,8 +113,8 @@ def test_encoder_helper(encoder_helper):
     ]
 
     try:
-        assert set(feature_lst).issubset(df.columns)
-        assert target_col in df.columns
+        assert set(variable_lst).issubset(df_encode.columns)
+        assert target_col in df_encode.columns
         logging.info(
             'Testing encoder_helper: SUCCESS - All features + target exist in df')
     except AssertionError as err:
@@ -119,7 +123,7 @@ def test_encoder_helper(encoder_helper):
         raise err
 
     # which features are categories
-    feature_bool_ls = [df[feat].dtype == np.object for feat in feature_lst]
+    feature_bool_ls = [df_encode[feat].dtype == np.object for feat in variable_lst]
 
     try:
         # check they are all categories
@@ -132,13 +136,14 @@ def test_encoder_helper(encoder_helper):
         raise err
 
     try:
-        df_encoded = encoder_helper(df, feature_lst, target_col)
+        df_encoded_rtn = encoder_helper(df_encode, variable_lst, target_col)
         logging.info('Testing encoder_helper: SUCCESS - Completed')
     except KeyError as err:
         logging.info('Testing encoder_helper: FAILURE - Failed to complete')
         raise err
-        
-    return df_encoded
+
+    return df_encoded_rtn
+
 
 def test_perform_feature_engineering(perform_feature_engineering):
     '''
@@ -154,7 +159,7 @@ def test_perform_feature_engineering(perform_feature_engineering):
         logging.info(
             'Testing test_perform_feature_engineering: FAILURE - df_encoded doesnt load')
         raise err
-        
+
     target_col = 'Churn'
     feature_lst = [
         'Customer_Age',
@@ -177,34 +182,37 @@ def test_perform_feature_engineering(perform_feature_engineering):
         'Income_Category_Churn',
         'Card_Category_Churn'
     ]
-    
+
     try:
         assert set(feature_lst).issubset(df_encoded.columns)
         assert target_col in df_encoded.columns
         logging.info(
-            'Testing test_perform_feature_engineering: SUCCESS - All features + target exist in df_encoded'
+            'Testing test_perform_feature_engineering: SUCCESS \
+            - All features + target exist in df_encoded'
         )
     except AssertionError as err:
         logging.info(
-            'Testing test_perform_feature_engineering: FAILURE - Features(s) or target dont exist in df_encoded'
+            'Testing test_perform_feature_engineering: FAILURE \
+            - Features(s) or target dont exist in df_encoded'
         )
         raise err
-    
+
     feature_train, feature_test, targets_train, targets_test = perform_feature_engineering(
         df_encoded, feature_lst, target_col)
     return feature_train, feature_test, targets_train, targets_test
+
 
 def test_train_models(train_models):
     '''
     test train_models
     '''
     try:
-        feature_train, feature_test, targets_train, targets_test = test_perform_feature_engineering(
-            cls.perform_feature_engineering)
-        assert feature_train.shape[0] == targets_train.shape[0]
-        assert feature_test.shape[0] == targets_test.shape[0]
-        assert feature_train.shape[0] > 0
-        assert feature_test.shape[0] > 0 
+        feature_train_rtn, feature_test_rtn, targets_train_rtn, targets_test_rtn = \
+        test_perform_feature_engineering(cls.perform_feature_engineering)
+        assert feature_train_rtn.shape[0] == targets_train_rtn.shape[0]
+        assert feature_test_rtn.shape[0] == targets_test_rtn.shape[0]
+        assert feature_train_rtn.shape[0] > 0
+        assert feature_test_rtn.shape[0] > 0
         logging.info(
             'Testing test_train_models: SUCCESS - train and test sets load'
         )
@@ -214,7 +222,8 @@ def test_train_models(train_models):
         )
         raise err
 
-    train_models(feature_train, feature_test, targets_train, targets_test)
+    train_models(feature_train_rtn, feature_test_rtn, targets_train_rtn, targets_test_rtn)
+
 
 if __name__ == "__main__":
     test_train_models(cls.train_models)

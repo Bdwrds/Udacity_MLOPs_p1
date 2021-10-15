@@ -9,5 +9,5 @@ root - INFO - Testing encoder_helper: SUCCESS - All features + target exist in d
 root - INFO - Testing encoder_helper: SUCCESS - All features are categories
 root - INFO - Testing encoder_helper: SUCCESS - Completed
 root - INFO - Testing test_perform_feature_engineering: SUCCESS - df_encoded loads empty
-root - INFO - Testing test_perform_feature_engineering: SUCCESS - All features + target exist in df_encoded
+root - INFO - Testing test_perform_feature_engineering: SUCCESS             - All features + target exist in df_encoded
 root - INFO - Testing test_train_models: SUCCESS - train and test sets load
