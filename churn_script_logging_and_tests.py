@@ -6,6 +6,7 @@ date: 2021-10-14
 import os
 import logging
 import churn_library as cls
+import numpy as np
 
 logging.basicConfig(
     filename='./logs/churn_library.log',
@@ -28,17 +29,19 @@ def test_import(import_data):
     try:
         assert df.shape[0] > 0
         assert df.shape[1] > 0
-        logging.info("Testing dataframe shape: SUCCESS: %s" % (str(df.shape)))
+        logging.info("Testing import_data: SUCCESS: dataframe shape %s" % (str(df.shape)))
     except AssertionError as err:
         logging.error("Testing import_data: The file doesn't appear to have rows and columns: %s"
                       (str(df.shape)))
         raise err
-
+        
+    return df
 
 def test_eda(perform_eda):
     '''
     test perform eda function
     '''
+    df = test_import(cls.import_data)
     eda_fp = './images/eda/'
 
     try:
@@ -47,8 +50,6 @@ def test_eda(perform_eda):
     except AssertionError as err:
         logging.error("Testing perform_eda: FAILURE - Filepath doesnt exist")
         raise err
-
-    df = cls.import_data("./data/bank_data.csv")
 
     try:
         assert 'Attrition_Flag' in df.columns
@@ -74,20 +75,20 @@ def test_eda(perform_eda):
         raise err
 
     try:
-        encoded_df = perform_eda(df)
+        perform_eda(df)
         logging.info('Testing perform_eda: SUCCESS - Completed')
     except KeyError as err:
         logging.info('Testing perform_eda: FAILURE - Failed to complete')
         raise err
+    return df
 
 
 def test_encoder_helper(encoder_helper):
     '''
     test encoder helper
     '''
-    import numpy as np
-    df = cls.import_data(pth=r"./data/bank_data.csv")
-
+    df = test_eda(cls.perform_eda)
+    
     try:
         assert 'Attrition_Flag' in df.columns
         df['Churn'] = df['Attrition_Flag'].apply(
@@ -131,38 +132,89 @@ def test_encoder_helper(encoder_helper):
         raise err
 
     try:
-        encoder_helper(df, feature_lst, target_col)
+        df_encoded = encoder_helper(df, feature_lst, target_col)
         logging.info('Testing encoder_helper: SUCCESS - Completed')
     except KeyError as err:
         logging.info('Testing encoder_helper: FAILURE - Failed to complete')
         raise err
-
+        
+    return df_encoded
 
 def test_perform_feature_engineering(perform_feature_engineering):
     '''
     test perform_feature_engineering
     '''
-    df = cls.import_data(pth=r"./data/bank_data.csv")
+    try:
+        df_encoded = test_encoder_helper(cls.encoder_helper)
+        logging.info(
+            'Testing test_perform_feature_engineering: SUCCESS - df_encoded loads empty')
+        assert df_encoded.shape[0] > 0
+        assert df_encoded.shape[1] > 0
+    except AssertionError as err:
+        logging.info(
+            'Testing test_perform_feature_engineering: FAILURE - df_encoded doesnt load')
+        raise err
+        
     target_col = 'Churn'
     feature_lst = [
-        'Gender',
-        'Education_Level',
-        'Marital_Status',
-        'Income_Category',
-        'Card_Category'
+        'Customer_Age',
+        'Dependent_count',
+        'Months_on_book',
+        'Total_Relationship_Count',
+        'Months_Inactive_12_mon',
+        'Contacts_Count_12_mon',
+        'Credit_Limit',
+        'Total_Revolving_Bal',
+        'Avg_Open_To_Buy',
+        'Total_Amt_Chng_Q4_Q1',
+        'Total_Trans_Amt',
+        'Total_Trans_Ct',
+        'Total_Ct_Chng_Q4_Q1',
+        'Avg_Utilization_Ratio',
+        'Gender_Churn',
+        'Education_Level_Churn',
+        'Marital_Status_Churn',
+        'Income_Category_Churn',
+        'Card_Category_Churn'
     ]
-    df_encoded = cls.encoder_helper(df, feature_lst, target_col)
-    perform_feature_engineering(df_encoded, feature_lst, target_col)
-
+    
+    try:
+        assert set(feature_lst).issubset(df_encoded.columns)
+        assert target_col in df_encoded.columns
+        logging.info(
+            'Testing test_perform_feature_engineering: SUCCESS - All features + target exist in df_encoded'
+        )
+    except AssertionError as err:
+        logging.info(
+            'Testing test_perform_feature_engineering: FAILURE - Features(s) or target dont exist in df_encoded'
+        )
+        raise err
+    
+    feature_train, feature_test, targets_train, targets_test = perform_feature_engineering(
+        df_encoded, feature_lst, target_col)
+    return feature_train, feature_test, targets_train, targets_test
 
 def test_train_models(train_models):
     '''
     test train_models
     '''
+    try:
+        feature_train, feature_test, targets_train, targets_test = test_perform_feature_engineering(
+            cls.perform_feature_engineering)
+        assert feature_train.shape[0] == targets_train.shape[0]
+        assert feature_test.shape[0] == targets_test.shape[0]
+        assert feature_train.shape[0] > 0
+        assert feature_test.shape[0] > 0 
+        logging.info(
+            'Testing test_train_models: SUCCESS - train and test sets load'
+        )
+    except AssertionError as err:
+        logging.info(
+            'Testing test_train_models: FAILURE - check shape of train/ test sets '
+        )
+        raise err
 
+    train_models(feature_train, feature_test, targets_train, targets_test)
 
 if __name__ == "__main__":
-    test_import(cls.import_data)
-    test_eda(cls.perform_eda)
-    test_encoder_helper(cls.encoder_helper)
-    # test_perform_feature_engineering(cls.perform_feature_engineering)
+    test_train_models(cls.train_models)

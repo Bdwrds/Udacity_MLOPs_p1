@@ -79,7 +79,7 @@ def encoder_helper(df_encode, category_lst, response):
 
     output:
             df_encode: pandas dataframe with new columns for
-    '''    
+    '''
     for category in category_lst:
         if df_encode[category].dtype == np.object:
             category_churn = category + '_Churn'
@@ -320,7 +320,6 @@ if __name__ == "__main__":
     target_col = 'Churn'
     df[target_col] = df['Attrition_Flag'].apply(
         lambda val: 0 if val == "Existing Customer" else 1)
-    
     feature_lst = [
         'Gender',
         'Education_Level',
@@ -329,7 +328,7 @@ if __name__ == "__main__":
         'Card_Category'
     ]
     # perform eda
-    perform_eda(df, target_col)
+    perform_eda(df)
     df_encoded = encoder_helper(df, feature_lst, target_col)
     keep_vars = [
         'Customer_Age',
