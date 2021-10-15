@@ -5,6 +5,11 @@
 ## Project Description
 Your project description here.
 
+## Install Dependencies
+
+pip install -r requirements.txt
+
+
 
 ## Running Files
 How do you run your files? What should happen when you run your files?
