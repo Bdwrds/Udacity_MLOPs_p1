@@ -11,6 +11,7 @@ FP_DATA = './data/'
 FP_EDA = './images/eda/'
 FP_MODELS = './models/'
 FP_RESULTS = './images/results/'
+FP_LOGS = './logs/'
 
 # names of files
 FILE_NAME = FP_DATA + r"bank_data.csv"
@@ -21,10 +22,11 @@ PLOT_MODEL_2_RESULTS = FP_RESULTS + 'lr_model_results.png'
 PLOT_ROC = FP_RESULTS + 'lr_vs_rf_roc_plot.png'
 PLOT_FEAT_IMP = FP_RESULTS + 'feature_importance_values.png'
 PLOT_SHAP = FP_RESULTS + 'shap_values.png'
+LOG_FILE = FP_LOGS + 'churn_library.log'
 
 # variable adjustment names
 VAR_1 = 'Attrition_Flag'
-VAR_2 = 'Existing Customer'
+FIELD_1 = 'Existing Customer'
 
 # variable list for plotting
 dict_vars_plot = {
@@ -65,10 +67,11 @@ lst_keep_features = [
         'Income_Category_Churn',
         'Card_Category_Churn']
 
+# parameters for RF grid search
 param_grid = {
-    'n_estimators': [200],  # , 500],
-    'max_features': ['auto'],  # , 'sqrt'],
-    'max_depth': [4],  # ,5,100],
-    'criterion': ['gini']  # , 'entropy']
+    'n_estimators': [200, 500],
+    'max_features': ['auto', 'sqrt'],
+    'max_depth': [4 , 5, 100],
+    'criterion': ['gini', 'entropy']
 }
 

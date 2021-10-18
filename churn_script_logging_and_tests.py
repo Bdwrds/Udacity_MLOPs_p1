@@ -10,7 +10,7 @@ import churn_library as cls
 import constants as cons
 
 logging.basicConfig(
-    filename='./logs/churn_library.log',
+    filename=cons.LOG_FILE,
     level=logging.INFO,
     filemode='w',
     format='%(name)s - %(levelname)s - %(message)s')
@@ -18,9 +18,9 @@ logging.basicConfig(
 
 def test_import(import_data, constants):
     '''
-    test data import
+    test function import_data for importing csv file
     input:
-        encoder_helper: function from churn_library.py
+        import_data: function from churn_library.py
         constants: list of parameters defined in constants.py
     output: df_load: pandas dataframe
     '''
@@ -38,10 +38,12 @@ def test_import(import_data, constants):
         assert df_load.shape[1] > 0
         logging.info(
             "Testing import_data: SUCCESS: dataframe shape %s", str(df_load.shape))
+        logging.info("Testing import_data: SUCCESS - Completed")
     except AssertionError as err:
         logging.error(
-            "Testing import_data: The file doesn't appear to have rows and columns:\
-             %s", str(df_load.shape))
+            "Testing import_data: FAILURE - \
+            The file doesn't appear to have rows and columns:%s",
+            str(df_load.shape))
         raise err
 
     # return the df_load for next test
@@ -49,7 +51,7 @@ def test_import(import_data, constants):
 
 def test_eda(perform_eda, constants):
     '''
-    test perform_eda function
+    test function perform_eda to create and save eda plots
     input:
         encoder_helper: function from churn_library.py
         constants: list of parameters defined in constants.py
@@ -74,22 +76,16 @@ def test_eda(perform_eda, constants):
     # create new target feature
     try:
         assert constants.VAR_1 in df_adj.columns
-        df_adj.loc[:,constants.TARGET_COL] = df_adj[:, constants.VAR_1].apply(
-            lambda val: 0 if val == constants.VAR_2 else 1)
+        df_adj[constants.TARGET_COL] = df_adj[constants.VAR_1].apply(
+            lambda val: 0 if val == constants.FIELD_1 else 1)
         logging.info('Testing perform_eda: SUCCESS - Target exists')
     except AssertionError as err:
         logging.error("Testing perform_eda: FAILURE - Target doesnt exist")
         raise err
 
-    plot_list = [
-        'Total_Trans_Ct',
-        'Marital_Status',
-        'Customer_Age',
-        'Churn'
-    ]
     # check necessary features exist for ED Analysis plots
     try:
-        assert set(plot_list).issubset(df_adj.columns) is not False
+        assert set(constants.dict_vars_plot.keys()).issubset(df_adj.columns) is not False
         logging.info('Testing perform_eda: SUCCESS - All features exist')
     except AssertionError as err:
         logging.info(
@@ -186,6 +182,7 @@ def test_perform_feature_engineering(perform_feature_engineering, constants):
         logging.info(
             'Testing test_perform_feature_engineering: SUCCESS - All vars exists in df'
         )
+        logging.info("Testing test_perform_feature_engineering: SUCCESS - Completed")
     except AssertionError as err:
         logging.info(
             'Testing test_perform_feature_engineering: FAILURE - Check vars exists in df'
@@ -233,13 +230,18 @@ def test_train_models(train_models, constants):
         raise err
 
     # train models
-    train_models(
-        feature_train_rtn,
-        feature_test_rtn,
-        targets_train_rtn,
-        targets_test_rtn,
-        constants
-    )
+    try:
+        train_models(
+            feature_train_rtn,
+            feature_test_rtn,
+            targets_train_rtn,
+            targets_test_rtn,
+            constants
+        )
+        logging.info("Testing test_train_models: SUCCESS - Completed")
+    except TypeError as err:
+        logging.info("Testing test_train_models: FAILURE - Failed on training process")
+        raise err
 
 if __name__ == "__main__":
     test_train_models(cls.train_models, cons)

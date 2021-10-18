@@ -302,7 +302,7 @@ if __name__ == "__main__":
 
     # create target from adjustment variables
     df[cons.TARGET_COL] = df[cons.VAR_1].apply(
-        lambda val: 0 if val == cons.VAR_2 else 1)
+        lambda val: 0 if val == cons.FIELD_1 else 1)
 
     # perform eda
     perform_eda(df, cons)
