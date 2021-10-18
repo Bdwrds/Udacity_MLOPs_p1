@@ -1,13 +1,14 @@
-root - INFO - Testing import_data: SUCCESS
+root - INFO - Testing import_data: SUCCESS - Loaded data
 root - INFO - Testing import_data: SUCCESS: dataframe shape (10127, 22)
+root - INFO - Testing perform_eda: SUCCESS - test_import completes
 root - INFO - Testing perform_eda: SUCCESS - Filepath exists
 root - INFO - Testing perform_eda: SUCCESS - Target exists
 root - INFO - Testing perform_eda: SUCCESS - All features exist
 root - INFO - Testing perform_eda: SUCCESS - Completed
-root - INFO - Testing test_encoder_helper: SUCCESS - Target exists
 root - INFO - Testing encoder_helper: SUCCESS - All features + target exist in df
 root - INFO - Testing encoder_helper: SUCCESS - All features are categories
 root - INFO - Testing encoder_helper: SUCCESS - Completed
-root - INFO - Testing test_perform_feature_engineering: SUCCESS - df_encoded loads empty
-root - INFO - Testing test_perform_feature_engineering: SUCCESS             - All features + target exist in df_encoded
+root - INFO - Testing test_perform_feature_engineering: SUCCESS - df_encoded loads
+root - INFO - Testing test_perform_feature_engineering: SUCCESS - All vars exists in df
 root - INFO - Testing test_train_models: SUCCESS - train and test sets load
+root - INFO - Testing test_train_models: SUCCESS - Filepath exists

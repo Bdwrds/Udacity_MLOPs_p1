@@ -2,7 +2,7 @@
 Churn prediction DS process - Functions & Solution
 
 author: Ben E
-date: 2021-10-13
+date: 2021-10-18
 """
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import plot_roc_curve, classification_report
@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
 import shap
+import constants as cons
 
 def import_data(pth):
     '''
@@ -30,41 +31,36 @@ def import_data(pth):
     df_load = pd.read_csv(pth)
     return df_load
 
-def perform_eda(df_eda):
+def perform_eda(df_eda, constants):
     '''
     perform eda on df and save figures to images folder
     input:
             df_eda: pandas dataframe
+            constants: list of parameters defined in constants.py
 
     output:
             None
     '''
-    eda_fp = './images/eda/'
-    # Dist of Churn
-    plt.figure()  # figsize=(20,10))
-    df_eda['Churn'].hist()
-    plt.savefig(eda_fp + 'eda_churn_dist.png')
-    print("saved eda_churn_dist")
-    # Dist of Customer_Age
-    plt.figure()  # figsize=(20,10))
-    df_eda['Customer_Age'].hist()
-    plt.savefig(eda_fp + 'eda_age_dist.png')
-    print("saved eda_age_dist")
-    # Perc of Marital_Status
-    plt.figure()  # figsize=(20,10))
-    df_eda.Marital_Status.value_counts('normalize').plot(kind='bar')
-    plt.savefig(eda_fp + 'eda_marital_status_perc.png')
-    print("saved eda_marital_status_perc")
-    # Dist of Total_Trans_Ct
-    plt.figure()  # figsize=(20,10))
-    sns.distplot(df_eda['Total_Trans_Ct'])
-    plt.savefig(eda_fp + 'eda_total_trans_ct_dist.png')
-    print("saved eda_total_trans_ct_dist")
-    # correlation plot
-    plt.figure()  # figsize=(20,10))
+    for plot_detail in constants.dict_vars_plot.items():
+        plt.figure()
+        plot_var = plot_detail[0]
+        plot_type = plot_detail[1]
+        if plot_type == 'hist':
+            df_eda[plot_var].hist()
+            plt.savefig(constants.FP_EDA + 'eda_' + plot_var + '_hist.png')
+        elif plot_type == 'value_counts':
+            df_eda[plot_var].value_counts('normalize').plot(kind='bar')
+            plt.savefig(constants.FP_EDA + 'eda_' + plot_var + '_perc.png')
+        elif plot_type == 'distplot':
+            sns.distplot(df_eda[plot_var])
+            plt.savefig(constants.FP_EDA + 'eda_' + plot_var + '_dist.png')
+        else:
+            print('ERROR: plot type not listed')
+        plt.close()
+
+    plt.figure()
     sns.heatmap(df_eda.corr(), annot=False, cmap='Dark2_r', linewidths=2)
-    plt.savefig(eda_fp + 'eda_heatmap.png')
-    print("saved eda_heatmap")
+    plt.savefig(constants.FP_EDA + 'eda_all_heatmap.png')
 
 def encoder_helper(df_encode, category_lst, response):
     '''
@@ -98,6 +94,7 @@ def perform_feature_engineering(df_eng, keep_cols, response):
     '''
     input:
               df_eng: pandas dataframe
+              keep_cols: the columns kept from df_eng
               response: string of response name
                   [optional argument that could be used for naming variables or index y column]
 
@@ -121,7 +118,7 @@ def classification_report_image(y_train,
                                 y_train_preds_rf,
                                 y_test_preds_lr,
                                 y_test_preds_rf,
-                                output_pth):
+                                constants):
     '''
     produces classification report for training and testing results and stores report as image
     in images folder
@@ -132,7 +129,7 @@ def classification_report_image(y_train,
             y_train_preds_rf: training predictions from random forest
             y_test_preds_lr: test predictions from logistic regression
             y_test_preds_rf: test predictions from random forest
-            output_pth: file path used to save images to
+            constants: list of parameters defined in constants.py
 
     output:
              None
@@ -154,7 +151,7 @@ def classification_report_image(y_train,
                 y_train, y_train_preds_rf)), {
             'fontsize': 10}, fontproperties='monospace')
     plt.axis('off')
-    plt.savefig(output_pth + 'rf_model_results.png')
+    plt.savefig(constants.PLOT_MODEL_1_RESULTS)
     print("saved rf_model_results")
     plt.close()
 
@@ -175,7 +172,7 @@ def classification_report_image(y_train,
                 y_test, y_test_preds_lr)), {
             'fontsize': 10}, fontproperties='monospace')
     plt.axis('off')
-    plt.savefig(output_pth + 'lr_model_results.png')
+    plt.savefig(constants.PLOT_MODEL_2_RESULTS)
     print("saved lr_model_results")
     plt.close()
 
@@ -195,7 +192,7 @@ def shap_importance_plot(model, x_data, output_pth):
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(x_data)
     shap.summary_plot(shap_values, x_data, plot_type="bar")
-    plt.savefig(output_pth + 'shap_values.png')
+    plt.savefig(output_pth)
     print("saved shap_values")
 
 
@@ -222,26 +219,25 @@ def model_feat_importance_plot(model, x_data, output_pth):
     plt.ylabel('Importance')
     plt.bar(range(x_data.shape[1]), importances[indices])
     plt.xticks(range(x_data.shape[1]), names, rotation=90)
-    plt.savefig(output_pth + 'feature_importance_values.png')
+    plt.savefig(output_pth)
     print("saved feature_importance_values")
 
 
-def feature_importance_plot(model, x_data, output_pth):
+def feature_importance_plot(model, x_data, constants):
     '''
     creates and stores the feature importances in pth
     input:
             model: model object containing feature_importances_
             x_data: pandas dataframe of X values
             output_pth: path to store the figure
-
     output:
              None
     '''
-    shap_importance_plot(model, x_data, output_pth)
-    model_feat_importance_plot(model, x_data, output_pth)
+    shap_importance_plot(model, x_data, constants.PLOT_SHAP)
+    model_feat_importance_plot(model, x_data, constants.PLOT_FEAT_IMP)
 
 
-def train_models(x_train, x_test, y_train, y_test):
+def train_models(x_train, x_test, y_train, y_test, constants):
     '''
     train, store model results: images + scores, and store models
     input:
@@ -249,27 +245,17 @@ def train_models(x_train, x_test, y_train, y_test):
               x_test: x testing data
               y_train: y training data
               y_test: y testing data
+              constants: list of parameters defined in constants.py
     output:
               None
     '''
     print("\nTraining models...")
-    # define filepaths
-    results_image_fp = './images/results/'
-    results_model_fp = './models/'
-
     # grid search
     rfc = RandomForestClassifier(random_state=42)
     lrc = LogisticRegression()
 
-    param_grid = {
-        'n_estimators': [200],  # , 500],
-        'max_features': ['auto'],  # , 'sqrt'],
-        'max_depth': [4],  # ,5,100],
-        'criterion': ['gini']  # , 'entropy']
-    }
-
     print('\nTraining RF..')
-    cv_rfc = GridSearchCV(estimator=rfc, param_grid=param_grid, cv=5)
+    cv_rfc = GridSearchCV(estimator=rfc, param_grid = constants.param_grid, cv=5)
     cv_rfc.fit(x_train, y_train)
     print('\nTraining LR..')
     lrc.fit(x_train, y_train)
@@ -277,20 +263,20 @@ def train_models(x_train, x_test, y_train, y_test):
     # plots
     plt.figure(figsize=(15, 8))
     lrc_plot = plot_roc_curve(lrc, x_test, y_test)
-    ax = plt.gca()
+    ax_gca = plt.gca()
     rfc_disp = plot_roc_curve(
         cv_rfc.best_estimator_,
         x_test,
         y_test,
-        ax=ax,
+        ax=ax_gca,
         alpha=0.8)
-    lrc_plot.plot(ax=ax, alpha=0.8)
-    plt.savefig(results_image_fp + 'lr_vs_rf_roc_plot.png')
+    lrc_plot.plot(ax=ax_gca, alpha=0.8)
+    plt.savefig(constants.PLOT_ROC)
     plt.close()
 
     # save best model
-    joblib.dump(cv_rfc.best_estimator_, results_model_fp + 'rfc_model.pkl')
-    joblib.dump(lrc, results_model_fp + 'logistic_model.pkl')
+    joblib.dump(cv_rfc.best_estimator_, constants.MODEL_NAME_1)
+    joblib.dump(lrc, constants.MODEL_NAME_2)
     print("\nTraining process complete...")
 
     print('\nGenerating report..')
@@ -306,56 +292,33 @@ def train_models(x_train, x_test, y_train, y_test):
         y_train_preds_rf,
         y_test_preds_lr,
         y_test_preds_rf,
-        results_image_fp)
+        constants)
 
 
 # run if not imported
 if __name__ == "__main__":
-    FP_DATA = './data/'
-    FP_EDA = './images/eda/'
-    FP_MODELS = './models/'
-    FP_RESULTS = './images/results/'
+    # load data
+    df = import_data(pth = cons.FILE_NAME)
 
-    df = import_data(pth=FP_DATA + r"bank_data.csv")
-    target_col = 'Churn'
-    df[target_col] = df['Attrition_Flag'].apply(
-        lambda val: 0 if val == "Existing Customer" else 1)
-    feature_lst = [
-        'Gender',
-        'Education_Level',
-        'Marital_Status',
-        'Income_Category',
-        'Card_Category'
-    ]
+    # create target from adjustment variables
+    df[cons.TARGET_COL] = df[cons.VAR_1].apply(
+        lambda val: 0 if val == cons.VAR_2 else 1)
+
     # perform eda
-    perform_eda(df)
-    df_encoded = encoder_helper(df, feature_lst, target_col)
-    keep_vars = [
-        'Customer_Age',
-        'Dependent_count',
-        'Months_on_book',
-        'Total_Relationship_Count',
-        'Months_Inactive_12_mon',
-        'Contacts_Count_12_mon',
-        'Credit_Limit',
-        'Total_Revolving_Bal',
-        'Avg_Open_To_Buy',
-        'Total_Amt_Chng_Q4_Q1',
-        'Total_Trans_Amt',
-        'Total_Trans_Ct',
-        'Total_Ct_Chng_Q4_Q1',
-        'Avg_Utilization_Ratio',
-        'Gender_Churn',
-        'Education_Level_Churn',
-        'Marital_Status_Churn',
-        'Income_Category_Churn',
-        'Card_Category_Churn']
+    perform_eda(df, cons)
+
+    # encode categorical variables
+    df_encoded = encoder_helper(df, cons.lst_features_encode, cons.TARGET_COL)
+
+    # perform feat engineering
     feature_train, feature_test, targets_train, targets_test = perform_feature_engineering(
-        df_encoded, keep_vars, target_col)
-    train_models(feature_train, feature_test, targets_train, targets_test)
+        df_encoded, cons.lst_keep_features, cons.TARGET_COL)
+
+    # train models
+    train_models(feature_train, feature_test, targets_train, targets_test, cons)
 
     # load saved rf model
-    rf_model = joblib.load(FP_MODELS + 'rfc_model.pkl')
+    rf_model = joblib.load(cons.MODEL_NAME_1)
 
     # compute and save results of feature importance values
-    feature_importance_plot(rf_model, feature_test, FP_RESULTS)
+    feature_importance_plot(rf_model, feature_test, cons)

@@ -1,12 +1,13 @@
 """
-Script to log and test churn_library.oy
+Script to log and test churn_library.py
 author: Ben E
-date: 2021-10-14
+date: 2021-10-18
 """
 import os
 import logging
 import numpy as np
 import churn_library as cls
+import constants as cons
 
 logging.basicConfig(
     filename='./logs/churn_library.log',
@@ -15,50 +16,66 @@ logging.basicConfig(
     format='%(name)s - %(levelname)s - %(message)s')
 
 
-def test_import(import_data):
+def test_import(import_data, constants):
     '''
-    test data import - this example is completed for you to assist with the other test functions
+    test data import
+    input:
+        encoder_helper: function from churn_library.py
+        constants: list of parameters defined in constants.py
+    output: df_load: pandas dataframe
     '''
+    # check the csv file exists
     try:
-        df = import_data("./data/bank_data.csv")
-        logging.info("Testing import_data: SUCCESS")
+        df_load = import_data(constants.FILE_NAME)
+        logging.info("Testing import_data: SUCCESS - Loaded data")
     except FileNotFoundError as err:
         logging.error("Testing import_eda: The file wasn't found")
         raise err
 
+    # check the shape of the csv is not empty
     try:
-        assert df.shape[0] > 0
-        assert df.shape[1] > 0
+        assert df_load.shape[0] > 0
+        assert df_load.shape[1] > 0
         logging.info(
-            "Testing import_data: SUCCESS: dataframe shape %s" %
-            (str(
-                df.shape)))
+            "Testing import_data: SUCCESS: dataframe shape %s", str(df_load.shape))
     except AssertionError as err:
-        logging.error("Testing import_data: The file doesn't appear to have rows and columns: %s"
-                      (str(df.shape)))
+        logging.error(
+            "Testing import_data: The file doesn't appear to have rows and columns:\
+             %s", str(df_load.shape))
         raise err
 
-    return df
+    # return the df_load for next test
+    return df_load
 
-
-def test_eda(perform_eda):
+def test_eda(perform_eda, constants):
     '''
-    test perform eda function
+    test perform_eda function
+    input:
+        encoder_helper: function from churn_library.py
+        constants: list of parameters defined in constants.py
+    output: df_adj: pandas dataframe
     '''
-    df = test_import(cls.import_data)
-    eda_fp = './images/eda/'
-
+    # run import test to obtain data
     try:
-        assert os.path.isdir(eda_fp) is not False
+        df_adj = test_import(cls.import_data, constants)
+        logging.info('Testing perform_eda: SUCCESS - test_import completes')
+    except AttributeError as err:
+        logging.info('Testing perform_eda: FAILURE - test_import fails')
+        raise err
+
+    # check the file path exists
+    try:
+        assert os.path.isdir(constants.FP_EDA) is not False
         logging.info('Testing perform_eda: SUCCESS - Filepath exists')
     except AssertionError as err:
         logging.error("Testing perform_eda: FAILURE - Filepath doesnt exist")
         raise err
 
+    # create new target feature
     try:
-        assert 'Attrition_Flag' in df.columns
-        df['Churn'] = df['Attrition_Flag'].apply(
-            lambda val: 0 if val == "Existing Customer" else 1)
+        assert constants.VAR_1 in df_adj.columns
+        df_adj.loc[:,constants.TARGET_COL] = df_adj[:, constants.VAR_1].apply(
+            lambda val: 0 if val == constants.VAR_2 else 1)
         logging.info('Testing perform_eda: SUCCESS - Target exists')
     except AssertionError as err:
         logging.error("Testing perform_eda: FAILURE - Target doesnt exist")
@@ -70,51 +87,43 @@ def test_eda(perform_eda):
         'Customer_Age',
         'Churn'
     ]
+    # check necessary features exist for ED Analysis plots
     try:
-        assert set(plot_list).issubset(df.columns) is not False
+        assert set(plot_list).issubset(df_adj.columns) is not False
         logging.info('Testing perform_eda: SUCCESS - All features exist')
     except AssertionError as err:
         logging.info(
             'Testing perform_eda: FAILURE - Features(s) for plots dont exist')
         raise err
 
+    # perform the eda
     try:
-        perform_eda(df)
+        perform_eda(df_adj, constants)
         logging.info('Testing perform_eda: SUCCESS - Completed')
     except KeyError as err:
         logging.info('Testing perform_eda: FAILURE - Failed to complete')
         raise err
-    return df
+
+    # return the df for next test
+    return df_adj
 
 
-def test_encoder_helper(encoder_helper):
+def test_encoder_helper(encoder_helper, constants):
     '''
     test encoder helper
+    input:
+        encoder_helper: function from churn_library.py
+        constants: list of parameters defined in constants.py
+    output:
+        df_encoded_rtn: dataframe with encoded variables
     '''
-    df_encode = test_eda(cls.perform_eda)
+    # perform previous test to obtain checked df
+    df_encode = test_eda(cls.perform_eda, constants)
 
+    # check the encoded features are in the df
     try:
-        assert 'Attrition_Flag' in df_encode.columns
-        df_encode['Churn'] = df_encode['Attrition_Flag'].apply(
-            lambda val: 0 if val == "Existing Customer" else 1)
-        logging.info('Testing test_encoder_helper: SUCCESS - Target exists')
-    except AssertionError as err:
-        logging.error(
-            "Testing test_encoder_helper: FAILURE - Target doesnt exist")
-        raise err
-
-    target_col = 'Churn'
-    variable_lst = [
-        'Gender',
-        'Education_Level',
-        'Marital_Status',
-        'Income_Category',
-        'Card_Category'
-    ]
-
-    try:
-        assert set(variable_lst).issubset(df_encode.columns)
-        assert target_col in df_encode.columns
+        assert set(constants.lst_features_encode).issubset(df_encode.columns)
+        assert constants.TARGET_COL in df_encode.columns
         logging.info(
             'Testing encoder_helper: SUCCESS - All features + target exist in df')
     except AssertionError as err:
@@ -122,11 +131,10 @@ def test_encoder_helper(encoder_helper):
             'Testing encoder_helper: FAILURE - Features(s) or target dont exist in df')
         raise err
 
-    # which features are categories
-    feature_bool_ls = [df_encode[feat].dtype == np.object for feat in variable_lst]
-
+    # check that these features are categories
+    feature_bool_ls = \
+    [df_encode.loc[:,feat].dtype == np.object for feat in constants.lst_features_encode]
     try:
-        # check they are all categories
         assert all(feature_bool_ls) is True
         logging.info(
             'Testing encoder_helper: SUCCESS - All features are categories')
@@ -135,80 +143,73 @@ def test_encoder_helper(encoder_helper):
             'Testing encoder_helper: FAILURE - Some feature(s) arent categories')
         raise err
 
+    # encode those features
     try:
-        df_encoded_rtn = encoder_helper(df_encode, variable_lst, target_col)
+        df_encoded_rtn = \
+        encoder_helper(df_encode, constants.lst_features_encode, constants.TARGET_COL)
         logging.info('Testing encoder_helper: SUCCESS - Completed')
     except KeyError as err:
         logging.info('Testing encoder_helper: FAILURE - Failed to complete')
         raise err
 
+    # return encoded df for next test
     return df_encoded_rtn
 
 
-def test_perform_feature_engineering(perform_feature_engineering):
+def test_perform_feature_engineering(perform_feature_engineering, constants):
     '''
     test perform_feature_engineering
+    input:
+        perform_feature_engineering: function from churn_library.py
+        constants: list of parameters defined in constants.py
+    output:
+        feature_train: dataframe with training features
+        feature_test: dataframe with test features
+        targets_train: dataframe with training target
+        targets_test: dataframe with test target
     '''
     try:
-        df_encoded = test_encoder_helper(cls.encoder_helper)
-        logging.info(
-            'Testing test_perform_feature_engineering: SUCCESS - df_encoded loads empty')
+        df_encoded = test_encoder_helper(cls.encoder_helper, constants)
         assert df_encoded.shape[0] > 0
         assert df_encoded.shape[1] > 0
+        logging.info(
+            'Testing test_perform_feature_engineering: SUCCESS - df_encoded loads')
     except AssertionError as err:
         logging.info(
             'Testing test_perform_feature_engineering: FAILURE - df_encoded doesnt load')
         raise err
 
-    target_col = 'Churn'
-    feature_lst = [
-        'Customer_Age',
-        'Dependent_count',
-        'Months_on_book',
-        'Total_Relationship_Count',
-        'Months_Inactive_12_mon',
-        'Contacts_Count_12_mon',
-        'Credit_Limit',
-        'Total_Revolving_Bal',
-        'Avg_Open_To_Buy',
-        'Total_Amt_Chng_Q4_Q1',
-        'Total_Trans_Amt',
-        'Total_Trans_Ct',
-        'Total_Ct_Chng_Q4_Q1',
-        'Avg_Utilization_Ratio',
-        'Gender_Churn',
-        'Education_Level_Churn',
-        'Marital_Status_Churn',
-        'Income_Category_Churn',
-        'Card_Category_Churn'
-    ]
-
+    # check final features exist in encoded df
     try:
-        assert set(feature_lst).issubset(df_encoded.columns)
-        assert target_col in df_encoded.columns
+        assert set(constants.lst_keep_features).issubset(df_encoded.columns)
+        assert constants.TARGET_COL in df_encoded.columns
         logging.info(
-            'Testing test_perform_feature_engineering: SUCCESS \
-            - All features + target exist in df_encoded'
+            'Testing test_perform_feature_engineering: SUCCESS - All vars exists in df'
         )
     except AssertionError as err:
         logging.info(
-            'Testing test_perform_feature_engineering: FAILURE \
-            - Features(s) or target dont exist in df_encoded'
+            'Testing test_perform_feature_engineering: FAILURE - Check vars exists in df'
         )
         raise err
 
+    # return dataframes for modelling
     feature_train, feature_test, targets_train, targets_test = perform_feature_engineering(
-        df_encoded, feature_lst, target_col)
+        df_encoded, constants.lst_keep_features, constants.TARGET_COL)
+
     return feature_train, feature_test, targets_train, targets_test
 
 
-def test_train_models(train_models):
+def test_train_models(train_models, constants):
     '''
     test train_models
     '''
+    fp_models = constants.FP_MODELS
+    fp_results = constants.FP_RESULTS
+
+    # obtain dataframes for modelling and validate sizes
     try:
         feature_train_rtn, feature_test_rtn, targets_train_rtn, targets_test_rtn = \
-        test_perform_feature_engineering(cls.perform_feature_engineering)
+        test_perform_feature_engineering(cls.perform_feature_engineering, constants)
         assert feature_train_rtn.shape[0] == targets_train_rtn.shape[0]
         assert feature_test_rtn.shape[0] == targets_test_rtn.shape[0]
         assert feature_train_rtn.shape[0] > 0
@@ -222,8 +223,23 @@ def test_train_models(train_models):
         )
         raise err
 
-    train_models(feature_train_rtn, feature_test_rtn, targets_train_rtn, targets_test_rtn)
+    # check the file paths for models & results exist
+    try:
+        assert os.path.isdir(fp_models) is not False
+        assert os.path.isdir(fp_results) is not False
+        logging.info('Testing test_train_models: SUCCESS - Filepath exists')
+    except AssertionError as err:
+        logging.info('Testing test_train_models: FAILURE - Filepaths do not exist')
+        raise err
 
+    # train models
+    train_models(
+        feature_train_rtn,
+        feature_test_rtn,
+        targets_train_rtn,
+        targets_test_rtn,
+        constants
+    )
 
 if __name__ == "__main__":
-    test_train_models(cls.train_models)
+    test_train_models(cls.train_models, cons)
