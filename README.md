@@ -31,6 +31,7 @@ This will generate:
 - EDA plots in the ./images/eda/ directory
 - training results in the ./images/results/ directory
 - models that are saved in the ./models/ directory
+- feature importances results in the ./images/results/ directory
 
 
 
