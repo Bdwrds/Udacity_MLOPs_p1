@@ -22,7 +22,8 @@ def test_import(import_data, constants):
     input:
         import_data: function from churn_library.py
         constants: list of parameters defined in constants.py
-    output: df_load: pandas dataframe
+    output: 
+        df_load: pandas dataframe
     '''
     # check the csv file exists
     try:
@@ -55,7 +56,8 @@ def test_eda(perform_eda, constants):
     input:
         encoder_helper: function from churn_library.py
         constants: list of parameters defined in constants.py
-    output: df_adj: pandas dataframe
+    output: 
+        df_adj: pandas dataframe
     '''
     # run import test to obtain data
     try:
@@ -106,7 +108,7 @@ def test_eda(perform_eda, constants):
 
 def test_encoder_helper(encoder_helper, constants):
     '''
-    test encoder helper
+    test function encoder_helper to encode categorical variables
     input:
         encoder_helper: function from churn_library.py
         constants: list of parameters defined in constants.py
@@ -154,7 +156,7 @@ def test_encoder_helper(encoder_helper, constants):
 
 def test_perform_feature_engineering(perform_feature_engineering, constants):
     '''
-    test perform_feature_engineering
+    test function perform_feature_engineering to return a valid test/train split
     input:
         perform_feature_engineering: function from churn_library.py
         constants: list of parameters defined in constants.py
@@ -198,7 +200,12 @@ def test_perform_feature_engineering(perform_feature_engineering, constants):
 
 def test_train_models(train_models, constants):
     '''
-    test train_models
+    test function train_models to train models on existing df
+    input:
+        train_models: function from churn_library.py
+        constants: list of parameters defined in constants.py
+    output:
+        None
     '''
     fp_models = constants.FP_MODELS
     fp_results = constants.FP_RESULTS
